@@ -12,5 +12,6 @@ namespace Model.Entities
         public string Apellido { get; set; }
         public string DNI { get; set; }
         public string Direccion { get; set; }
+        public City City { get; set; }
     }
 }

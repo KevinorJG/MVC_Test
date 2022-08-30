@@ -13,36 +13,52 @@ namespace Controllers.Controllers
 {
     public class ClientController
     {
-        protected List<Client> clients = new List<Client>();
+        protected List<Client> ListClients = new List<Client>();
         protected string Json;
         protected string ruta;
         protected string currenPath = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "List.json";
         
         public void Save(ClientViewModel model)
         {
+            //Guarda el cliente que le estas pasando a lista clientes
             if (model == null)
             {
                 throw new ArgumentNullException("El modelo está vacio");
             }
+            City city = new City()
+            {
+                CityName = model.City.CityName,
+                CountryName = model.City.CountryName,
+            };
             Client client = new Client()
             {
                 Nombre = model.Nombre,
                 Apellido = model.Apellido,
                 Direccion = model.Direccion,
                 DNI = model.DNI,
+                City = city
             };
-            clients.Add(client);
+            ListClients.Add(client);
 
         }
 
         public List<Client> GetClients()
         {
-            return clients;
+            return ListClients;
         }
 
         public Client GetClientByDNI(string dni)
+        { 
+            return ListClients.FirstOrDefault(x => x.DNI == dni);
+        }
+        public bool ExistClient(string dni)
         {
-            return clients.FirstOrDefault(c => c.DNI == dni);
+            var exist = ListClients.Where(c => c.DNI == dni);
+            if (exist.Any())
+            {
+                return true;
+            }
+            return false;
         }
 
         public bool Update(ClientViewModel model)
@@ -51,63 +67,103 @@ namespace Controllers.Controllers
             {
                 throw new ArgumentNullException("El modelo está vacio");
             }
-            var cl = clients.FirstOrDefault(c => c.DNI == model.DNI);
-            var index = clients.IndexOf(cl);
+            var cl = ListClients.FirstOrDefault(c => c.DNI == model.DNI);
+            int index = ListClients.IndexOf(cl);
+           
            
             if (index == -1)
             {
                 return false;
             }
+            City city = new City()
+            {
+                CityName = model.City.CityName,
+                CountryName = model.City.CountryName,
+            };
             Client client = new Client()
             {
                 Nombre = model.Nombre,
                 Apellido = model.Apellido,
                 Direccion = model.Direccion,
                 DNI = model.DNI,
+                City = city
             };
-            clients.RemoveAt(index);
-            clients.Insert(index, client);
-            SaveInfo();
+            ListClients.RemoveAt(index);
+            ListClients.Insert(index, client);
             return true;
         }
 
         public void SaveInfo()
         {
             ruta = currenPath;
-            Json = JsonConvert.SerializeObject(clients);
+            Json = JsonConvert.SerializeObject(ListClients,Formatting.Indented);
 
             if (!String.IsNullOrEmpty(Json))
             {
-                using (FileStream stream = new FileStream(ruta, FileMode.OpenOrCreate))
+                if (File.Exists(ruta))
                 {
-                    using (StreamWriter sw = new StreamWriter(stream))
+                    File.Delete(ruta);
+                    using (FileStream stream = new FileStream(ruta, FileMode.OpenOrCreate))
                     {
-                        sw.WriteLine(Json);
-                    }
+                        using (StreamWriter sw = new StreamWriter(stream))
+                        {
+                            sw.WriteLine(Json);
+                        }
 
-                }
+                    }
+                }                             
             }
            
         }
         public List<Client> LoadClient()
         {
-            string JsonString;
+            string JsonString = String.Empty;
             ruta = currenPath;
-            using (FileStream stream = new FileStream(ruta, FileMode.OpenOrCreate))
+            List<Client> ls = null;
+            
+            try
             {
-                using (StreamReader sw = new StreamReader(stream))
+                if (File.Exists(ruta))
                 {
-                    JsonString = sw.ReadToEnd();
-                }
+                    using (FileStream stream = new FileStream(ruta, FileMode.OpenOrCreate))
+                    {
+                        using (StreamReader sw = new StreamReader(stream))
+                        {
 
+                            JsonString = sw.ReadToEnd();
+                        }
+                    }
+                }
+                ls = JsonConvert.DeserializeObject<List<Client>>(JsonString);
             }
-            var ls = JsonConvert.DeserializeObject<List<Client>>(JsonString);
+            catch
+            {
+               
+            }
+            
             if(ls == null)
             {
                 return null;
             }
-            clients = ls.ToList();
+            ListClients = ls.ToList();
             return ls;
+        }
+        public bool DeleteClient(ClientViewModel model )
+        {
+            if (model == null)
+            {
+                throw new ArgumentNullException("El modelo está vacio");
+            }
+            var cl = ListClients.FirstOrDefault(c => c.DNI == model.DNI);
+            var index = ListClients.IndexOf(cl);
+
+            if (index == -1)
+            {
+                return false;
+            }
+            
+            ListClients.RemoveAt(index);           
+            return true;
         }
     }
 }
